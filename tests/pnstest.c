@@ -1,3 +1,7 @@
+// MIT License
+// Copyright (c) 2024 Lauri Lorenzo Fiestas
+// https://github.com/PrinssiFiestas/DSP/blob/main/LICENCE
+
 #include <dspapi.h>
 #include <chelpers.h>
 

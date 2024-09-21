@@ -66,9 +66,9 @@ DSP_EXPORT void processBlock(struct BlockData* data)
             double y = x;
             //for (uint i = 0; i < 128; ++i, x = y) // uncomment for performance test
             {
-                // TODO allow testing for everything
-                static IIRFilter fltr[2][IIR_POLES(16)];
-                y = iir_chebyshev_low_pass(fltr[c], 16, x, freq, ripple);
+                // TODO TEST EVERYTHING
+                static IIRFilter filter[2][IIR_POLES(16)];
+                y = iir_fast_high_pass12(filter[c], x, freq, damping);
             }
             data->samples[c][s] = volume*y;
         }

@@ -2,8 +2,8 @@
 // Copyright (c) 2024 Lauri Lorenzo Fiestas
 // https://github.com/PrinssiFiestas/DSP/blob/main/LICENCE
 
-#ifndef DSP_IIR_INCLUDED
-#define DSP_IIR_INCLUDED 1
+#ifndef IIR_H_INCLUDED
+#define IIR_H_INCLUDED 1
 
 #include <stddef.h>
 
@@ -82,10 +82,10 @@ double iir_butterworth_low_pass12(IIRFilter[IIR_POLES(2)], double input, double 
 double iir_butterworth_high_pass12(IIRFilter[IIR_POLES(2)], double input, double freq) IIR_NONNULL_ARGS(); /**< Maximally flat pass-band. */
 double iir_all_pass6(IIRFilter[IIR_POLES(1)], double input, double freq) IIR_NONNULL_ARGS();
 double iir_all_pass12(IIRFilter[IIR_POLES(2)], double input, double freq, double q) IIR_NONNULL_ARGS();
-double iir_low_shelving(IIRFilter[IIR_POLES(2)], double input, double freq, double gain_db) IIR_NONNULL_ARGS();
-double iir_high_shelving(IIRFilter[IIR_POLES(2)], double input, double freq, double gain_db) IIR_NONNULL_ARGS();
-double iir_peak(IIRFilter[IIR_POLES(2)], double input, double freq, double q, double gain_db) IIR_NONNULL_ARGS();
-double iir_peak_const_q(IIRFilter[IIR_POLES(2)], double input, double freq, double q, double gain_db) IIR_NONNULL_ARGS();
+double iir_low_shelving(IIRFilter[IIR_POLES(1)], double input, double freq, double gain) IIR_NONNULL_ARGS();
+double iir_high_shelving(IIRFilter[IIR_POLES(1)], double input, double freq, double gain) IIR_NONNULL_ARGS();
+double iir_peak(IIRFilter[IIR_POLES(2)], double input, double freq, double q, double gain) IIR_NONNULL_ARGS();
+double iir_peak_const_q(IIRFilter[IIR_POLES(2)], double input, double freq, double q, double gain) IIR_NONNULL_ARGS();
 double iir_linkwitz_riley_low_pass12(IIRFilter[IIR_POLES(2)], double input, double freq) IIR_NONNULL_ARGS();  /**< -6 dB cutoff point. Useful for cross-overs. */
 double iir_linkwitz_riley_high_pass12(IIRFilter[IIR_POLES(2)], double input, double freq) IIR_NONNULL_ARGS(); /**< -6 dB cutoff point. Useful for cross-overs. */
 /** @} */
@@ -151,10 +151,10 @@ void iir_coeffs_butterworth_low_pass12(IIRFilter[IIR_POLES(2)], double sample_ti
 void iir_coeffs_butterworth_high_pass12(IIRFilter[IIR_POLES(2)], double sample_time, double freq) IIR_NONNULL_ARGS(); /**< Maximally flat pass-band. */
 void iir_coeffs_all_pass6(IIRFilter[IIR_POLES(1)], double sample_time, double freq) IIR_NONNULL_ARGS();
 void iir_coeffs_all_pass12(IIRFilter[IIR_POLES(2)], double sample_time, double freq, double q) IIR_NONNULL_ARGS();
-void iir_coeffs_low_shelving(IIRFilter[IIR_POLES(2)], double sample_time, double freq, double gain_db) IIR_NONNULL_ARGS();
-void iir_coeffs_high_shelving(IIRFilter[IIR_POLES(2)], double sample_time, double freq, double gain_db) IIR_NONNULL_ARGS();
-void iir_coeffs_peak(IIRFilter[IIR_POLES(2)], double sample_time, double freq, double q, double gain_db) IIR_NONNULL_ARGS();
-void iir_coeffs_peak_const_q(IIRFilter[IIR_POLES(2)], double sample_time, double freq, double q, double gain_db) IIR_NONNULL_ARGS();
+void iir_coeffs_low_shelving(IIRFilter[IIR_POLES(1)], double sample_time, double freq, double gain) IIR_NONNULL_ARGS();
+void iir_coeffs_high_shelving(IIRFilter[IIR_POLES(1)], double sample_time, double freq, double gain) IIR_NONNULL_ARGS();
+void iir_coeffs_peak(IIRFilter[IIR_POLES(2)], double sample_time, double freq, double q, double gain) IIR_NONNULL_ARGS();
+void iir_coeffs_peak_const_q(IIRFilter[IIR_POLES(2)], double sample_time, double freq, double q, double gain) IIR_NONNULL_ARGS();
 void iir_coeffs_linkwitz_riley_low_pass12(IIRFilter[IIR_POLES(2)], double sample_time, double freq) IIR_NONNULL_ARGS();  /**< -6 dB cutoff point. Useful for cross-overs. */
 void iir_coeffs_linkwitz_riley_high_pass12(IIRFilter[IIR_POLES(2)], double sample_time, double freq) IIR_NONNULL_ARGS(); /**< -6 dB cutoff point. Useful for cross-overs. */
 
@@ -181,4 +181,4 @@ void iir_coeffs_chebyshev_high_pass(IIRFilter[], size_t poles, double sample_tim
 } // extern "C"
 #endif
 
-#endif // DSP_IIR_INCLUDED
+#endif // IIR_H_INCLUDED

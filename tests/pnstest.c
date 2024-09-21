@@ -24,6 +24,7 @@ DSP_EXPORT string description = "DSP testing";
 enum {
     PARAM_FREQ,
     PARAM_Q,
+    PARAM_RIPPLE,
     PARAM_VOL,
     PARAM_GAIN,
     PARAMS_LENGTH
@@ -31,7 +32,7 @@ enum {
 
 double params[PARAMS_LENGTH];
 DSP_EXPORT struct CDoubleArray inputParameters = {params, PARAMS_LENGTH};
-const char* params_names[PARAMS_LENGTH] = {"freq", "q", "vol", "gain"};
+const char* params_names[PARAMS_LENGTH] = {"freq", "q", "ripple", "vol", "gain"};
 DSP_EXPORT struct CStringArray inputParametersNames = {params_names, PARAMS_LENGTH};
 //array<string> inputParametersUnits = {};
 //double paramMin[] = {0};
@@ -44,11 +45,12 @@ DSP_EXPORT struct CStringArray inputParametersNames = {params_names, PARAMS_LENG
 //int steps[] = {-1};
 //DSP_EXPORT array<int> inputParametersSteps(steps);
 
-double freq = 0.;
-double q = 1.;
+double freq    = 0.;
+double q       = 1.;
 double damping = 1.;
-double volume = 1.;
-double gain = 1.;
+double ripple  = 0.;
+double volume  = 1.;
+double gain    = 1.;
 
 DSP_EXPORT bool initialize(void)
 {
@@ -56,45 +58,44 @@ DSP_EXPORT bool initialize(void)
     return true;
 }
 
+double iir_chebyshev_low_pass(IIRFilter filter[], size_t poles, double input, double freq, double ripple);
+
 DSP_EXPORT void processBlock(struct BlockData* data)
 {
-    static IIRFilter filter[2] = {0};
-
     for (uint c = 0; c < audioInputsCount; ++c)
         for (uint s = 0; s < data->samplesToProcess; ++s)
         {
             double x = data->samples[c][s];
             double y = x;
-            //for (uint i = 0; i < 1024; ++i, x = y) // uncomment for performance test
+            //for (uint i = 0; i < 128; ++i, x = y) // uncomment for performance test
             {
                 #if 0
+                static IIRFilter filter[2] = {0};
                 //y = iir_fast_low_pass12(&filter[c], x, freq, q);
-                y = iir_fast_low_pass6(&filter[c], x, freq);
+                //y = iir_fast_low_pass6(&filter[c], x, freq);
+                y = iir_chebyshev_low_pass(&filter[c], 16, x, freq, ripple);
                 #else
-                (void)filter;
                 //static Filter fltr[2][IIR_POLES(2)];
                 //y = fast_low_pass6(fltr[c], x, freq);
                 //y = fast_low_pass12(fltr[c], x, freq, damping);
                 //y = low_pass12(fltr[c], x, freq, q);
 
-                static Filter fltr[2][IIR_POLES(8)];
-                y = chebyshev_low_pass(fltr[c], 8, x, freq, 0.2);
-                //y = chebyshev_low_pass(fltr[c], 4, x, .2, 0.005);
+                static Filter fltr[2][IIR_POLES(16)];
+                y = chebyshev_low_pass(fltr[c], 16, x, freq, ripple);
                 #endif
             }
             data->samples[c][s] = volume*y;
         }
 }
 
-void coeffs_fast_low_pass12(Filter filter[3], double, double);
-
 DSP_EXPORT void updateInputParameters(void)
 {
-    freq = params[0]*params[0];
-    q = 4.*params[1] + .707;
+    freq    = params[PARAM_FREQ]*params[PARAM_FREQ];
+    q       = 4.*params[PARAM_Q] + .707;
+    ripple  = params[PARAM_RIPPLE];
     damping = 1./q;
-    volume = params[2];
-    gain = 20.*params[3];
+    volume  = params[PARAM_VOL];
+    gain    = 20.*params[PARAM_GAIN];
 }
 
 /* void updateInputParametersForBlock()

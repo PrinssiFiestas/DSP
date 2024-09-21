@@ -276,7 +276,7 @@ static void coeffs_chebyshev(
     Filter filter[],
     size_t poles,
     double normalized_freq,
-    double ripple,
+    double normalized_ripple,
     bool   is_high_pass)
 {
     double  a[32] = {0};
@@ -284,7 +284,8 @@ static void coeffs_chebyshev(
     double ta[32] = {0};
     double tb[32] = {0};
 
-    double freq = .5 * normalized_freq;
+    double freq   = .5*normalized_freq;
+    double ripple = .2925*normalized_ripple;
     a[2] = b[2] = 1.;
 
     // Loop for each pole pair
@@ -349,6 +350,97 @@ double chebyshev_high_pass(Filter filter[], size_t poles, double input, double f
 {
     coeffs_chebyshev_high_pass(filter, poles, freq, ripple);
     return apply_filter(filter, poles, input, NULL);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+static void iir_coeffs_chebyshev(
+    IIRCoeffs* filter,
+    size_t poles,
+    double normalized_freq,
+    double normalized_ripple,
+    bool   is_high_pass)
+{
+    double  a[32] = {0};
+    double  b[32] = {0};
+    double ta[32] = {0};
+    double tb[32] = {0};
+
+    double freq   = .5*normalized_freq;
+    double ripple = .2925*normalized_ripple;
+    a[2] = b[2] = 1.;
+
+    // Loop for each pole pair
+    for (size_t p = 0; p < poles/2; ++p) {
+        IIRChebyCoeffs coeff = {0};
+        iir_cheby_coeffs(&coeff, poles, p, freq, ripple, is_high_pass);
+
+        // Add coefficients to the cascade
+        for (size_t i = 0; i <= poles; ++i) {
+            ta[i] = a[i];
+            tb[i] = b[i];
+        }
+        for (size_t i = 2; i <= poles + 2; ++i) {
+            a[i] = coeff.a0*ta[i] + coeff.a1*ta[i - 1] + coeff.a2*ta[i - 2];
+            b[i] =          tb[i] - coeff.b1*tb[i - 1] - coeff.b2*tb[i - 2];
+        }
+    }
+    // Finish combining coefficients
+    b[2] = 0.;
+    for (size_t i = 0; i <= poles; ++i) {
+        a[i] =  a[i + 2];
+        b[i] = -b[i + 2];
+    }
+    // Normalize the gain
+    double sa = 0.;
+    double sb = 0.;
+    for (size_t i = 0; i <= poles; ++i) {
+        if ( ! is_high_pass || (i & 1) == 0) {
+            sa += a[i];
+            sb += b[i];
+        } else {
+            sa -= a[i];
+            sb -= b[i];
+        }
+    }
+    double gain = sa/(1. - sb);
+    for (size_t i = 0; i <= poles; ++i) {
+        filter->a[i] = a[i] / gain;
+        filter->b[i] = b[i];
+    }
+}
+
+void iir_coeffs_chebyshev_low_pass(IIRCoeffs* filter, size_t poles, double freq, double ripple)
+{
+    // TODO generic freq
+    iir_coeffs_chebyshev(filter, poles, freq, ripple, false);
+}
+
+void iir_coeffs_chebyshev_high_pass(IIRCoeffs* filter, size_t poles, double freq, double ripple)
+{
+    // TODO generic freq
+    iir_coeffs_chebyshev(filter, poles, freq, ripple, true);
+}
+
+double iir_chebyshev_low_pass(IIRFilter filter[], size_t poles, double input, double freq, double ripple)
+{
+    iir_coeffs_chebyshev_low_pass(&filter->coeff, poles, freq, ripple);
+    return iir_apply_filter(filter, poles, input, NULL);
+}
+
+double iir_chebyshev_high_pass(IIRFilter filter[], size_t poles, double input, double freq, double ripple)
+{
+    iir_coeffs_chebyshev_high_pass(&filter->coeff, poles, freq, ripple);
+    return iir_apply_filter(filter, poles, input, NULL);
 }
 
 

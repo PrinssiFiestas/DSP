@@ -4,7 +4,11 @@
 
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror -Iinclude -Itests/include -O3
+SRCS = tests/pnstest.c src/iir.c
 
-build/pnstest.x64: tests/pnstest.c
+build/pnstest.x64: $(SRCS) include/dsp/iir.h
 	mkdir -p build
-	$(CC) -o $@ $< $(CFLAGS) -s -shared -Wl,--subsystem,windows
+	$(CC) -o $@ $(SRCS) $(CFLAGS) -s -shared -Wl,--subsystem,windows
+
+clean:
+	rm -rf build

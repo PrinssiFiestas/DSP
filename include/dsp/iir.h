@@ -108,7 +108,8 @@ double iir_fast_high_pass12(IIRFilter[IIR_POLES(2)], double input, double normal
  * poles. It is the responsability of the user to limit @p freq to a stable
  * range. @p freq can be in Hz or from 0.0 to 1.0.
  *     @p ripple should be in range 0.0 to 1.0, where 0.0 corresponds to 0%
- * ripple (Butterworth) and 1.0 corresponds to about 30% ripple. @{
+ * ripple (Butterworth) and 1.0 corresponds to about 30% ripple. Higher
+ * @p ripple gives faster roll-off, but more ripple (duh). @{
  */
 double iir_chebyshev_low_pass(IIRFilter[], size_t poles, double input, double freq, double ripple) IIR_NONNULL_ARGS();
 double iir_chebyshev_high_pass(IIRFilter[], size_t poles, double input, double freq, double ripple) IIR_NONNULL_ARGS();
@@ -118,10 +119,15 @@ double iir_chebyshev_high_pass(IIRFilter[], size_t poles, double input, double f
 // Generic Filtering
 
 /** Filter with precalculated coefficients and optional nonlinearities.
- * @p filter and obviously has to be of size `IIR_POLES(@p poles)`. Same with
+ * @p filter obviously has to be of size `IIR_POLES(@p poles)`. Same with
  * non-linearities if passed, `NULL` for linear filtering. @p filter must have
  * it's coefficients precalculated. Use a function from @ref Coefficients to
  * calculate coefficients before calling this function.
+ *     This library calculates filter output with the recursion equation in form
+ * `y0 = a0*x0 + a1*x1 + ... + an*xn + b1*y1 + b2*y2 + ... + bn*yn` as opposed
+ * to the difference equation in form of
+ * `y0 = a0*x0 + a1*x1 + ... + an*xn - b1*y1 - b2*y2 - ... - bn*yn`. Be mindful
+ * of the signs of the b coefficients when writing custom IIR filters.
  */
 IIR_NONNULL_ARGS(1)
 double iir_apply_filter(

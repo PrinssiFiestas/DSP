@@ -9,6 +9,8 @@
 
 #include <stdbool.h>
 
+void(*iir_print)(const char*) = print;
+
 DSP_EXPORT void*          host=null;
 DSP_EXPORT HostPrintFunc* hostPrint=null;
 DSP_EXPORT double         sampleRate = 0;
@@ -65,15 +67,19 @@ DSP_EXPORT void processBlock(struct BlockData* data)
             double y = x;
             //for (uint i = 0; i < 1024; ++i, x = y) // uncomment for performance test
             {
-                #if 1
+                #if 0
                 //y = iir_fast_low_pass12(&filter[c], x, freq, q);
                 y = iir_fast_low_pass6(&filter[c], x, freq);
                 #else
                 (void)filter;
-                static Filter fltr[2][IIR_POLES(2)];
-                y = fast_low_pass6(fltr[c], x, freq);
+                //static Filter fltr[2][IIR_POLES(2)];
+                //y = fast_low_pass6(fltr[c], x, freq);
                 //y = fast_low_pass12(fltr[c], x, freq, damping);
                 //y = low_pass12(fltr[c], x, freq, q);
+
+                static Filter fltr[2][IIR_POLES(8)];
+                y = chebyshev_low_pass(fltr[c], 8, x, freq, 0.2);
+                //y = chebyshev_low_pass(fltr[c], 4, x, .2, 0.005);
                 #endif
             }
             data->samples[c][s] = volume*y;

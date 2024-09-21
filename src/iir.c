@@ -3,6 +3,7 @@
 // https://github.com/PrinssiFiestas/DSP/blob/main/LICENCE
 
 #include <dsp/iir.h>
+#include <stdbool.h>
 #include <math.h>
 
 // Performance notes
@@ -191,16 +192,16 @@ double cos_01(double x)
 
 void coeffs_fast_low_pass12(Filter filter[3], double normalized_freq, double damping)
 {
-    normalized_freq *= .65; // fix approximation instability
-    double alpha = damping*normalized_freq*(1. - normalized_freq);
+    double freq  = normalized_freq * .65; // fix approximation instability
+    double alpha = damping*freq*(1. - freq);
     double beta  = (.5 - alpha) / (1. + 2*alpha);
-    double cos01 = 2*(normalized_freq - 3.)*normalized_freq*normalized_freq + 1.;
+    double cos01 = 2*(freq - 3.)*freq*freq + 1.;
     double gamma = (.5 + beta)*cos01;
-    filter[1].a = .5 + beta - gamma;
-    filter[0].a = filter[1].a/2;
-    filter[2].a = filter[0].a;
-    filter[1].b = 2*gamma;
-    filter[2].b = -2*beta;
+    filter[1].a  = .5 + beta - gamma;
+    filter[0].a  = filter[1].a/2;
+    filter[2].a  = filter[0].a;
+    filter[1].b  = 2*gamma;
+    filter[2].b  = -2*beta;
 }
 
 double fast_low_pass12(Filter filter[3], double input, double normalized_freq, double damping)
@@ -208,4 +209,146 @@ double fast_low_pass12(Filter filter[3], double input, double normalized_freq, d
         coeffs_fast_low_pass12(filter, normalized_freq, damping);
 	return apply_filter(filter, 2, input, NULL);
 }
+
+
+
+
+
+typedef struct iir_cheby_coeffs
+{
+    double a0;
+    double a1;
+    double a2;
+    double b1;
+    double b2;
+} IIRChebyCoeffs;
+
+static void iir_cheby_coeffs(
+    IIRChebyCoeffs* coeff,
+    size_t          poles,
+    size_t          p,
+    double          freq,
+    double          ripple,
+    bool            is_high_pass)
+{
+    // Pole location in unit circle
+    double rp = -cos(M_PI/(2*poles) + p*M_PI/poles);
+    double ip =  sin(M_PI/(2*poles) + p*M_PI/poles);
+
+    // Warp from a circle to an ellipse
+    if (ripple != 0.) {
+        double r  = 1./(1. - ripple);
+        double es = sqrt(r*r - 1.);
+        double vx = 1./poles * log(1./es + sqrt(1./(es*es) + 1.));
+        double kx = 1./poles * log(1./es + sqrt(1./(es*es) - 1.));
+               kx = (exp(kx) + exp(-kx)) / 2;
+               rp = rp * ((exp(vx) - exp(-vx)) / 2) / kx;
+               ip = ip * ((exp(vx) + exp(-vx)) / 2) / kx;
+    }
+    // s-domain to z-domain conversion
+    double t  = 2*tan(.5);
+    double w  = 2*M_PI*freq;
+    double m  = rp*rp + ip*ip;
+    double d  = 4. - 4*rp*t + m*t*t;
+    double x0 = t*t/d;
+    double x1 = 2*t*t/d;
+    double x2 = t*t/d;
+    double y1 = (8. - 2*m*t*t)/d;
+    double y2 = (-4. - 4*rp*t - m*t*t)/d;
+
+    // LP to LP, or LP to HP transform
+    double k = is_high_pass ?
+        -cos(w/2 + .5) / cos(w/2 - .5)
+      :  sin(.5 - w/2) / sin(.5 + w/2);
+    d = 1. + y1*k - y2*k*k;
+    coeff->a0 = (x0 - x1*k + x2*k*k)/d;
+    coeff->a1 = (-2*x0*k + x1 + x1*k*k - 2*x2*k)/d;
+    coeff->a2 = (x0*k*k - x1*k + x2)/d;
+    coeff->b1 = (2*k + y1 + y1*k*k - 2*y2*k)/d;
+    coeff->b2 = (-k*k - y1*k + y2)/d;
+    if (is_high_pass) {
+        coeff->a1 *= -1;
+        coeff->b1 *= -1;
+    }
+}
+
+static void coeffs_chebyshev(
+    Filter filter[],
+    size_t poles,
+    double normalized_freq,
+    double ripple,
+    bool   is_high_pass)
+{
+    double  a[32] = {0};
+    double  b[32] = {0};
+    double ta[32] = {0};
+    double tb[32] = {0};
+
+    double freq = .5 * normalized_freq;
+    a[2] = b[2] = 1.;
+
+    // Loop for each pole pair
+    for (size_t p = 0; p < poles/2; ++p) {
+        IIRChebyCoeffs coeff = {0};
+        iir_cheby_coeffs(&coeff, poles, p, freq, ripple, is_high_pass);
+
+        // Add coefficients to the cascade
+        for (size_t i = 0; i <= poles; ++i) {
+            ta[i] = a[i];
+            tb[i] = b[i];
+        }
+        for (size_t i = 2; i <= poles + 2; ++i) {
+            a[i] = coeff.a0*ta[i] + coeff.a1*ta[i - 1] + coeff.a2*ta[i - 2];
+            b[i] =          tb[i] - coeff.b1*tb[i - 1] - coeff.b2*tb[i - 2];
+        }
+    }
+    // Finish combining coefficients
+    b[2] = 0.;
+    for (size_t i = 0; i <= poles; ++i) {
+        a[i] =  a[i + 2];
+        b[i] = -b[i + 2];
+    }
+    // Normalize the gain
+    double sa = 0.;
+    double sb = 0.;
+    for (size_t i = 0; i <= poles; ++i) {
+        if ( ! is_high_pass || (i & 1) == 0) {
+            sa += a[i];
+            sb += b[i];
+        } else {
+            sa -= a[i];
+            sb -= b[i];
+        }
+    }
+    double gain = sa/(1. - sb);
+    for (size_t i = 0; i <= poles; ++i) {
+        filter[i].a = a[i] / gain;
+        filter[i].b = b[i];
+    }
+}
+
+void coeffs_chebyshev_low_pass(Filter filter[], size_t poles, double freq, double ripple)
+{
+    // TODO generic freq
+    coeffs_chebyshev(filter, poles, freq, ripple, false);
+}
+
+void coeffs_chebyshev_high_pass(Filter filter[], size_t poles, double freq, double ripple)
+{
+    // TODO generic freq
+    coeffs_chebyshev(filter, poles, freq, ripple, true);
+}
+
+double chebyshev_low_pass(Filter filter[], size_t poles, double input, double freq, double ripple)
+{
+    coeffs_chebyshev_low_pass(filter, poles, freq, ripple);
+    return apply_filter(filter, poles, input, NULL);
+}
+
+double chebyshev_high_pass(Filter filter[], size_t poles, double input, double freq, double ripple)
+{
+    coeffs_chebyshev_high_pass(filter, poles, freq, ripple);
+    return apply_filter(filter, poles, input, NULL);
+}
+
 

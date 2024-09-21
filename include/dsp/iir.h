@@ -135,6 +135,13 @@ double fast_low_pass6(Filter filter[2], double input, double freq);
 IIR_NONNULL_ARGS()
 double fast_low_pass12(Filter filter[3], double input, double freq, double damping);
 
+IIR_NONNULL_ARGS()
+double chebyshev_low_pass(Filter filter[], size_t poles, double input, double freq, double ripple);
+
+IIR_NONNULL_ARGS()
+double chebyshev_high_pass(Filter filter[], size_t poles, double input, double freq, double ripple);
+
+
 #if __cplusplus
 } // extern "C"
 #endif

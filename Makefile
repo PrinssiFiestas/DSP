@@ -3,7 +3,7 @@
 # https://github.com/PrinssiFiestas/DSP/blob/main/LICENCE
 
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -Iinclude -Itests/include -O3
+CFLAGS = -Wall -Wextra -Werror -Wpedantic -std=c99 -Iinclude -Itests/include -O3
 SRCS = tests/pnstest.c src/iir.c
 
 build/pnstest.x64: $(SRCS) include/dsp/iir.h

@@ -157,8 +157,8 @@ void iir_coeffs_fast_high_pass6(IIRFilter[IIR_POLES(1)], double normalized_freq)
 void iir_coeffs_fast_low_pass12(IIRFilter[IIR_POLES(2)], double normalized_freq, double damping) IIR_NONNULL_ARGS();
 void iir_coeffs_fast_high_pass12(IIRFilter[IIR_POLES(2)], double normalized_freq, double damping) IIR_NONNULL_ARGS();
 
-void iir_coeffs_chebyshev_low_pass(IIRFilter[], size_t poles, double freq, double ripple) IIR_NONNULL_ARGS();
-void iir_coeffs_chebyshev_high_pass(IIRFilter[], size_t poles, double freq, double ripple) IIR_NONNULL_ARGS();
+void iir_coeffs_chebyshev_low_pass(IIRFilter[], size_t poles, double sample_time, double freq, double ripple) IIR_NONNULL_ARGS();
+void iir_coeffs_chebyshev_high_pass(IIRFilter[], size_t poles, double sample_time, double freq, double ripple) IIR_NONNULL_ARGS();
 /** @} */
 
 

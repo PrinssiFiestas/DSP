@@ -28,7 +28,7 @@ extern "C" {
 /** Filter state array sizes. */
 #define IIR_POLES(N) ((N/*previous samples*/) + 1/*current sample*/)
 
-/** Filter State and Coefficients.
+/** Filter state and coefficients.
  * This should always be used as an array large enough to hold the state and
  * coefficients for any given type of filter. For every 6 dB/octave, 1 pole is
  * needed, so a 12 dB/octave filter has to be of type `IIRFilter[IIR_POLES(2)]`.
@@ -70,7 +70,7 @@ double iir_sample_time(void);       /**< 1./iir_sample_rate() */
 
 /** @defgroup BasicFilters Basic Precise Linear Filters
  * @p freq can be in Hz or normalized range from 0.0 to 1.0. Uses global sample
- * rate. If this is not desired, use @ref iir_apply_filter() instead. @{
+ * rate when using Hz. If this is not desired, use @ref iir_apply_filter(). @{
  */
 double iir_low_pass6(IIRFilter[IIR_POLES(1)], double input, double freq) IIR_NONNULL_ARGS();
 double iir_high_pass6(IIRFilter[IIR_POLES(1)], double input, double freq) IIR_NONNULL_ARGS();

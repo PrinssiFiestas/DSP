@@ -7,12 +7,24 @@
 #include <dspapi.h>
 #include <chelpers.h>
 
+#include <stdio.h>
+#include <stdarg.h>
 #include <stdbool.h>
 
 DSP_EXPORT void*          host=null;
 DSP_EXPORT HostPrintFunc* hostPrint=null;
 DSP_EXPORT double         sampleRate = 0;
 DSP_EXPORT uint           audioInputsCount = 0;
+
+void dsp_printf(const char* fmt, ...)
+{
+    char buf[1024] = "";
+    va_list args;
+    va_start(args, fmt);
+    vsprintf(buf, fmt, args);
+    print(buf);
+    va_end(args);
+}
 
 //-------------------------------------------------------
 
@@ -29,9 +41,14 @@ enum {
 };
 
 double params[PARAMS_LENGTH];
-DSP_EXPORT struct CDoubleArray inputParameters = {params, PARAMS_LENGTH};
-const char* params_names[PARAMS_LENGTH] = {"freq", "q", "ripple", "vol", "gain"};
-DSP_EXPORT struct CStringArray inputParametersNames = {params_names, PARAMS_LENGTH};
+DSP_EXPORT struct CDoubleArray inputParameters = { params, PARAMS_LENGTH };
+const char* params_names[PARAMS_LENGTH] = {
+    [PARAM_FREQ]   = "freq",
+    [PARAM_Q]      = "q",
+    [PARAM_RIPPLE] = "ripple",
+    [PARAM_VOL]    = "volume",
+    [PARAM_GAIN]   = "gain" };
+DSP_EXPORT struct CStringArray inputParametersNames = { params_names, PARAMS_LENGTH };
 // Uncomment these as needed
 //array<string> inputParametersUnits = {};
 //double paramMin[] = {0};

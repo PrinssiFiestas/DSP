@@ -20,24 +20,7 @@
 #define IIR_SQRT2       1.41421356237309504880
 #define IIR_SQRT1_2     0.70710678118654752440
 
-static double iir_global_sample_rate;
-static double iir_global_sample_time;
-
-void iir_set_sample_rate(double sr)
-{
-    iir_global_sample_rate = sr;
-    iir_global_sample_time = 1./sr;
-}
-
-double iir_sample_rate(void)
-{
-    return iir_global_sample_rate;
-}
-
-double iir_sample_time(void)
-{
-    return iir_global_sample_time;
-}
+double iir_sample_rate;
 
 void iir_filter_reset(IIRFilter filter[], size_t poles)
 {
@@ -69,9 +52,9 @@ double iir_apply_filter(IIRFilter filter[], size_t poles, double input, const II
 // ----------------------------------------------------------------------------
 // Low Pass 6
 
-void iir_coeffs_low_pass6(IIRFilter filter[IIR_POLES(1)], double sample_time, double freq)
+void iir_coeffs_low_pass6(IIRFilter filter[IIR_POLES(1)], double freq)
 {
-    double freq1 = freq <= 1. ? freq : 2*freq*sample_time;
+    double freq1 = freq <= 1. ? freq : 2*freq/iir_sample_rate;
     double gamma = 2. - cos(IIR_PI*freq1);
     filter[1].b  = gamma - sqrt(gamma*gamma - 1.);
     filter[0].a  = 1. - filter[1].b;
@@ -80,16 +63,16 @@ void iir_coeffs_low_pass6(IIRFilter filter[IIR_POLES(1)], double sample_time, do
 
 double iir_low_pass6(IIRFilter filter[IIR_POLES(1)], double input, double freq)
 {
-    iir_coeffs_low_pass6(filter, iir_global_sample_time, freq);
+    iir_coeffs_low_pass6(filter, freq);
     return iir_apply_filter(filter, 1, input, NULL);
 }
 
 // ----------------------------------------------------------------------------
 // High Pass 6
 
-void iir_coeffs_high_pass6(IIRFilter filter[IIR_POLES(1)], double sample_time, double freq)
+void iir_coeffs_high_pass6(IIRFilter filter[IIR_POLES(1)], double freq)
 {
-    double freq1 = freq <= 1. ? freq : 2*freq*sample_time;
+    double freq1 = freq <= 1. ? freq : 2*freq/iir_sample_rate;
     double theta = IIR_PI*freq1;
     double gamma = cos(theta)/(1. + sin(theta));
     filter[0].a  = (1. + gamma)/2;
@@ -99,16 +82,16 @@ void iir_coeffs_high_pass6(IIRFilter filter[IIR_POLES(1)], double sample_time, d
 
 double iir_high_pass6(IIRFilter filter[IIR_POLES(1)], double input, double freq)
 {
-    iir_coeffs_high_pass6(filter, iir_global_sample_time, freq);
+    iir_coeffs_high_pass6(filter, freq);
     return iir_apply_filter(filter, 1, input, NULL);
 }
 
 //-----------------------------------------------------------------------------
 // Low Pass 12
 
-void iir_coeffs_low_pass12(IIRFilter filter[IIR_POLES(2)], double sample_time, double freq, double q)
+void iir_coeffs_low_pass12(IIRFilter filter[IIR_POLES(2)], double freq, double q)
 {
-    double freq1 = freq <= 1. ? freq : 2*freq*sample_time;
+    double freq1 = freq <= 1. ? freq : 2*freq/iir_sample_rate;
     double theta = IIR_PI*freq1;
     double d     = 1./q;
     double dsint = d*sin(theta)/2;
@@ -124,16 +107,16 @@ void iir_coeffs_low_pass12(IIRFilter filter[IIR_POLES(2)], double sample_time, d
 
 double iir_low_pass12(IIRFilter filter[IIR_POLES(2)], double input, double freq, double q)
 {
-    iir_coeffs_low_pass12(filter, iir_global_sample_time, freq, q);
+    iir_coeffs_low_pass12(filter, freq, q);
     return iir_apply_filter(filter, 2, input, NULL);
 }
 
 // ----------------------------------------------------------------------------
 // High Pass 12
 
-void iir_coeffs_high_pass12(IIRFilter filter[IIR_POLES(2)], double sample_time, double freq, double q)
+void iir_coeffs_high_pass12(IIRFilter filter[IIR_POLES(2)], double freq, double q)
 {
-    double freq1 = freq <= 1. ? freq : 2*freq*sample_time;
+    double freq1 = freq <= 1. ? freq : 2*freq/iir_sample_rate;
     double theta = IIR_PI*freq1;
     double d     = 1./q;
     double dsint = d*sin(theta)/2.;
@@ -149,16 +132,16 @@ void iir_coeffs_high_pass12(IIRFilter filter[IIR_POLES(2)], double sample_time, 
 
 double iir_high_pass12(IIRFilter filter[IIR_POLES(2)], double input, double freq, double q)
 {
-    iir_coeffs_high_pass12(filter, iir_global_sample_time, freq, q);
+    iir_coeffs_high_pass12(filter, freq, q);
     return iir_apply_filter(filter, 2, input, NULL);
 }
 
 // ----------------------------------------------------------------------------
 // Band Pass 12
 
-void iir_coeffs_band_pass12(IIRFilter filter[IIR_POLES(2)], double sample_time, double freq, double q)
+void iir_coeffs_band_pass12(IIRFilter filter[IIR_POLES(2)], double freq, double q)
 {
-    double freq1 = freq <= 1. ? freq/2 : freq*sample_time;
+    double freq1 = freq <= 1. ? freq/2 : freq/iir_sample_rate;
     double k     = tan(IIR_PI*freq1);
     double delta = k*k*q + k + q;
     filter[0].a  = k/delta;
@@ -170,16 +153,16 @@ void iir_coeffs_band_pass12(IIRFilter filter[IIR_POLES(2)], double sample_time, 
 
 double iir_band_pass12(IIRFilter filter[IIR_POLES(2)], double input, double freq, double q)
 {
-    iir_coeffs_band_pass12(filter, iir_global_sample_time, freq, q);
+    iir_coeffs_band_pass12(filter, freq, q);
     return iir_apply_filter(filter, 2, input, NULL);
 }
 
 // ----------------------------------------------------------------------------
 // Band Stop 12
 
-void iir_coeffs_band_stop12(IIRFilter filter[IIR_POLES(2)], double sample_time, double freq, double q)
+void iir_coeffs_band_stop12(IIRFilter filter[IIR_POLES(2)], double freq, double q)
 {
-    double freq1 = freq <= 1. ? freq/2 : freq*sample_time;
+    double freq1 = freq <= 1. ? freq/2 : freq/iir_sample_rate;
     double k     = tan(IIR_PI*freq1);
     double delta = k*k*q + k + q;
     filter[0].a  = q*(k*k + 1.)/delta;
@@ -191,16 +174,16 @@ void iir_coeffs_band_stop12(IIRFilter filter[IIR_POLES(2)], double sample_time, 
 
 double iir_band_stop12(IIRFilter filter[IIR_POLES(2)], double input, double freq, double q)
 {
-    iir_coeffs_band_stop12(filter, iir_global_sample_time, freq, q);
+    iir_coeffs_band_stop12(filter, freq, q);
     return iir_apply_filter(filter, 2, input, NULL);
 }
 
 // ----------------------------------------------------------------------------
 // Butterworth Low Pass 12
 
-void iir_coeffs_butterworth_low_pass12(IIRFilter filter[IIR_POLES(2)], double sample_time, double freq)
+void iir_coeffs_butterworth_low_pass12(IIRFilter filter[IIR_POLES(2)], double freq)
 {
-    double freq1   = freq <= 1. ? freq/2 : freq*sample_time;
+    double freq1   = freq <= 1. ? freq/2 : freq/iir_sample_rate;
     double bounded = fmin(fmax(freq1, 1e-5), .5 - 1e-4); // prevent singularities
     double c       = 1./tan(IIR_PI*bounded);
     filter[0].a    = 1./(1. + IIR_SQRT2*c + c*c);
@@ -212,16 +195,16 @@ void iir_coeffs_butterworth_low_pass12(IIRFilter filter[IIR_POLES(2)], double sa
 
 double iir_butterworth_low_pass12(IIRFilter filter[IIR_POLES(2)], double input, double freq)
 {
-    iir_coeffs_butterworth_low_pass12(filter, iir_global_sample_time, freq);
+    iir_coeffs_butterworth_low_pass12(filter, freq);
     return iir_apply_filter(filter, 2, input, NULL);
 }
 
 // ----------------------------------------------------------------------------
 // Butterworth High Pass 12
 
-void iir_coeffs_butterworth_high_pass12(IIRFilter filter[IIR_POLES(2)], double sample_time, double freq)
+void iir_coeffs_butterworth_high_pass12(IIRFilter filter[IIR_POLES(2)], double freq)
 {
-    double freq1   = freq <= 1. ? freq/2 : freq*sample_time;
+    double freq1   = freq <= 1. ? freq/2 : freq/iir_sample_rate;
     double _freq1  = .5 - freq1;
     double bounded = fmin(fmax(_freq1, 1e-5), .5 - 1e-4); // prevent singularities
     double c       = 1./tan(IIR_PI*bounded);
@@ -234,16 +217,16 @@ void iir_coeffs_butterworth_high_pass12(IIRFilter filter[IIR_POLES(2)], double s
 
 double iir_butterworth_high_pass12(IIRFilter filter[IIR_POLES(2)], double input, double freq)
 {
-    iir_coeffs_butterworth_high_pass12(filter, iir_global_sample_time, freq);
+    iir_coeffs_butterworth_high_pass12(filter, freq);
     return iir_apply_filter(filter, 2, input, NULL);
 }
 
 // ----------------------------------------------------------------------------
 // All Pass 6
 
-void iir_coeffs_all_pass6(IIRFilter filter[IIR_POLES(1)], double sample_time, double freq)
+void iir_coeffs_all_pass6(IIRFilter filter[IIR_POLES(1)], double freq)
 {
-    double freq1 = freq <= 1. ? freq/2 : freq*sample_time;
+    double freq1 = freq <= 1. ? freq/2 : freq/iir_sample_rate;
     double theta = IIR_PI*freq1;
     double alpha = (tan(theta) - 1.)/(tan(theta) + 1.);
     filter[0].a  = alpha;
@@ -253,16 +236,16 @@ void iir_coeffs_all_pass6(IIRFilter filter[IIR_POLES(1)], double sample_time, do
 
 double iir_all_pass6(IIRFilter filter[IIR_POLES(1)], double input, double freq)
 {
-    iir_coeffs_all_pass6(filter, iir_global_sample_time, freq);
+    iir_coeffs_all_pass6(filter, freq);
     return iir_apply_filter(filter, 1, input, NULL);
 }
 
 // ----------------------------------------------------------------------------
 // All Pass 12
 
-void iir_coeffs_all_pass12(IIRFilter filter[IIR_POLES(2)], double sample_time, double freq, double q)
+void iir_coeffs_all_pass12(IIRFilter filter[IIR_POLES(2)], double freq, double q)
 {
-    double freq1 = freq <= 1. ? freq/2 : freq*sample_time;
+    double freq1 = freq <= 1. ? freq/2 : freq/iir_sample_rate;
     double theta = IIR_PI*freq1;
     double alpha = (tan(theta/q) - 1.)/(tan(theta/q) + 1.);
     double beta  = -cos(2*theta);
@@ -275,16 +258,16 @@ void iir_coeffs_all_pass12(IIRFilter filter[IIR_POLES(2)], double sample_time, d
 
 double iir_all_pass12(IIRFilter filter[IIR_POLES(2)], double input, double freq, double q)
 {
-    iir_coeffs_all_pass12(filter, iir_global_sample_time, freq, q);
+    iir_coeffs_all_pass12(filter, freq, q);
     return iir_apply_filter(filter, 2, input, NULL);
 }
 
 // ----------------------------------------------------------------------------
 // Low Shelving
 
-void iir_coeffs_low_shelving(IIRFilter filter[IIR_POLES(1)], double sample_time, double freq, double gain)
+void iir_coeffs_low_shelving(IIRFilter filter[IIR_POLES(1)], double freq, double gain)
 {
-    double freq1 = freq <= 1. ? freq/2 : freq*sample_time;
+    double freq1 = freq <= 1. ? freq/2 : freq/iir_sample_rate;
     double theta = IIR_PI*freq1;
     double beta  = 4./(1. + gain);
     double delta = beta*tan(theta);
@@ -297,16 +280,16 @@ void iir_coeffs_low_shelving(IIRFilter filter[IIR_POLES(1)], double sample_time,
 double iir_low_shelving(IIRFilter filter[IIR_POLES(1)], double input, double freq, double gain_db)
 {
     double gain = pow(10., gain_db/20);
-    iir_coeffs_low_shelving(filter, iir_global_sample_time, freq, gain);
+    iir_coeffs_low_shelving(filter, freq, gain);
     return input + (gain - 1.)*iir_apply_filter(filter, 1, input, NULL);
 }
 
 // ----------------------------------------------------------------------------
 // High Shelving
 
-void iir_coeffs_high_shelving(IIRFilter filter[IIR_POLES(1)], double sample_time, double freq, double gain)
+void iir_coeffs_high_shelving(IIRFilter filter[IIR_POLES(1)], double freq, double gain)
 {
-    double freq1 = freq <= 1. ? freq/2 : freq*sample_time;
+    double freq1 = freq <= 1. ? freq/2 : freq/iir_sample_rate;
     double theta = IIR_PI*freq1;
     double beta  = (1. + gain)/4;
     double delta = beta*tan(theta);
@@ -319,16 +302,16 @@ void iir_coeffs_high_shelving(IIRFilter filter[IIR_POLES(1)], double sample_time
 double iir_high_shelving(IIRFilter filter[IIR_POLES(1)], double input, double freq, double gain_db)
 {
     double gain = pow(10., gain_db/20);
-    iir_coeffs_high_shelving(filter, iir_global_sample_time, freq, gain);
+    iir_coeffs_high_shelving(filter, freq, gain);
     return input + (gain - 1.)*iir_apply_filter(filter, 1, input, NULL);
 }
 
 // ----------------------------------------------------------------------------
 // Peak
 
-void iir_coeffs_peak(IIRFilter filter[IIR_POLES(2)], double sample_time, double freq, double q, double gain)
+void iir_coeffs_peak(IIRFilter filter[IIR_POLES(2)], double freq, double q, double gain)
 {
-    double freq1 = freq <= 1. ? freq/2 : freq*sample_time;
+    double freq1 = freq <= 1. ? freq/2 : freq/iir_sample_rate;
     double theta = 2*IIR_PI*freq1;
     double sigma = 4./(1. + gain);
     double beta  = .5*(1. - sigma*tan(.5*theta/q))/(1. + sigma*tan(.5*theta/q));
@@ -343,16 +326,16 @@ void iir_coeffs_peak(IIRFilter filter[IIR_POLES(2)], double sample_time, double 
 double iir_peak(IIRFilter filter[IIR_POLES(2)], double input, double freq, double q, double gain_db)
 {
     double gain = pow(10., gain_db/20);
-    iir_coeffs_peak(filter, iir_global_sample_time, freq, gain, q);
+    iir_coeffs_peak(filter, freq, gain, q);
     return input + (gain - 1.)*iir_apply_filter(filter, 2, input, NULL);
 }
 
 // ----------------------------------------------------------------------------
 // Peak Const Q
 
-void iir_coeffs_peak_const_q(IIRFilter filter[IIR_POLES(2)], double sample_time, double freq, double q, double gain)
+void iir_coeffs_peak_const_q(IIRFilter filter[IIR_POLES(2)], double freq, double q, double gain)
 {
-    double freq1 = freq <= 1. ? freq/2 : freq*sample_time;
+    double freq1 = freq <= 1. ? freq/2 : freq/iir_sample_rate;
     double theta = IIR_PI*freq1;
     double k     = tan(theta);
     double d0    = 1. + k/q + k*k;
@@ -374,17 +357,16 @@ void iir_coeffs_peak_const_q(IIRFilter filter[IIR_POLES(2)], double sample_time,
 double iir_peak_const_q(IIRFilter filter[IIR_POLES(2)], double input, double freq, double q, double gain_db)
 {
     double gain = pow(10., gain_db/20);
-    iir_coeffs_peak_const_q(filter, iir_global_sample_time, freq, q, gain);
+    iir_coeffs_peak_const_q(filter, freq, q, gain);
     return iir_apply_filter(filter, 2, input, NULL);
 }
 
 // ----------------------------------------------------------------------------
 // Linkwitz Riley Low Pass 12
 
-void iir_coeffs_linkwitz_riley_low_pass12(IIRFilter filter[IIR_POLES(2)], double sample_time, double freq)
+void iir_coeffs_linkwitz_riley_low_pass12(IIRFilter filter[IIR_POLES(2)], double freq)
 {
-    (void)sample_time;
-    double sample_rate = freq <= 1. ? 2. : iir_global_sample_rate;
+    double sample_rate = freq <= 1. ? 2. : iir_sample_rate;
     double theta = IIR_PI*freq/sample_rate;
     double omega = IIR_PI*freq;
     double kappa = omega/tan(theta);
@@ -398,17 +380,16 @@ void iir_coeffs_linkwitz_riley_low_pass12(IIRFilter filter[IIR_POLES(2)], double
 
 double iir_linkwitz_riley_low_pass12(IIRFilter filter[IIR_POLES(2)], double input, double freq)
 {
-    iir_coeffs_linkwitz_riley_low_pass12(filter, iir_global_sample_time, freq);
+    iir_coeffs_linkwitz_riley_low_pass12(filter, freq);
     return iir_apply_filter(filter, 2, input, NULL);
 }
 
 // ----------------------------------------------------------------------------
 // Linkwitz Riley High Pass 12
 
-void iir_coeffs_linkwitz_riley_high_pass12(IIRFilter filter[IIR_POLES(2)], double sample_time, double freq)
+void iir_coeffs_linkwitz_riley_high_pass12(IIRFilter filter[IIR_POLES(2)], double freq)
 {
-    (void)sample_time;
-    double sample_rate = freq <= 1. ? 2. : iir_global_sample_rate;
+    double sample_rate = freq <= 1. ? 2. : iir_sample_rate;
     double theta = IIR_PI*freq/sample_rate;
     double omega = IIR_PI*freq;
     double kappa = omega/tan(theta);
@@ -422,7 +403,7 @@ void iir_coeffs_linkwitz_riley_high_pass12(IIRFilter filter[IIR_POLES(2)], doubl
 
 double iir_linkwitz_riley_high_pass12(IIRFilter filter[IIR_POLES(2)], double input, double freq)
 {
-    iir_coeffs_linkwitz_riley_high_pass12(filter, iir_global_sample_time, freq);
+    iir_coeffs_linkwitz_riley_high_pass12(filter, freq);
     return iir_apply_filter(filter, 2, input, NULL);
 }
 
@@ -626,26 +607,26 @@ static void iir_coeffs_chebyshev(
     }
 }
 
-void iir_coeffs_chebyshev_low_pass(IIRFilter filter[], size_t poles, double sample_time, double freq, double ripple)
+void iir_coeffs_chebyshev_low_pass(IIRFilter filter[], size_t poles, double freq, double ripple)
 {
-    double freq1 = freq <= 1. ? freq : 2.*freq*sample_time;
+    double freq1 = freq <= 1. ? freq : 2.*freq/iir_sample_rate;
     iir_coeffs_chebyshev(filter, poles, freq1, ripple, false);
 }
 
-void iir_coeffs_chebyshev_high_pass(IIRFilter filter[], size_t poles, double sample_time, double freq, double ripple)
+void iir_coeffs_chebyshev_high_pass(IIRFilter filter[], size_t poles, double freq, double ripple)
 {
-    double freq1 = freq <= 1. ? freq : 2.*freq*sample_time;
+    double freq1 = freq <= 1. ? freq : 2.*freq/iir_sample_rate;
     iir_coeffs_chebyshev(filter, poles, freq1, ripple, true);
 }
 
 double iir_chebyshev_low_pass(IIRFilter filter[], size_t poles, double input, double freq, double ripple)
 {
-    iir_coeffs_chebyshev_low_pass(filter, poles, iir_global_sample_time, freq, ripple);
+    iir_coeffs_chebyshev_low_pass(filter, poles, freq, ripple);
     return iir_apply_filter(filter, poles, input, NULL);
 }
 
 double iir_chebyshev_high_pass(IIRFilter filter[], size_t poles, double input, double freq, double ripple)
 {
-    iir_coeffs_chebyshev_high_pass(filter, poles, iir_global_sample_time, freq, ripple);
+    iir_coeffs_chebyshev_high_pass(filter, poles, freq, ripple);
     return iir_apply_filter(filter, poles, input, NULL);
 }

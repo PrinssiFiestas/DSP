@@ -57,23 +57,22 @@ typedef struct iir_nonlinearities
     double(*fy)(double); /**< applied to outputs */
 } IIRNonlinearities;
 
-/** @defgroup SampleRate Global Sample Rate
+/** Global Sample Rate
  * Most filters use global sample rate with the assumption of them only being
  * called from the real-time audio thread. If filters are used in multiple
  * threads, or smaple rate changes due to oversampling, or multiple sample rates
- * are used for any other reason, use @ref iir_apply_filter() instead. @{
+ * are used for any other reason, use normalized frequencies from 0.0 to 1.0.
+ * Normalized frequency can be calculated with `2.0*frequency/sample_rate`.
  */
-void   iir_set_sample_rate(double); /**< also sets iir_sample_time().*/
-double iir_sample_rate(void);
-double iir_sample_time(void);       /**< 1./iir_sample_rate() */
-/** @} */
+extern double iir_sample_rate;
 
 /** Sets filter state to 0. */
 void iir_filter_reset(IIRFilter[], size_t poles) IIR_NONNULL_ARGS();
 
 /** @defgroup BasicFilters Basic Precise Linear Filters
  * @p freq can be in Hz or normalized range from 0.0 to 1.0. Uses global sample
- * rate when using Hz. If this is not desired, use @ref iir_apply_filter(). @{
+ * rate when using Hz. If this is not desired, use normalized frequency.
+ * Normalized frequency can be calculated with `2.0*frequency/sample_rate`.@{
  */
 double iir_low_pass6(IIRFilter[IIR_POLES(1)], double input, double freq) IIR_NONNULL_ARGS();
 double iir_high_pass6(IIRFilter[IIR_POLES(1)], double input, double freq) IIR_NONNULL_ARGS();
@@ -141,33 +140,32 @@ double iir_apply_filter(
 
 /** @defgroup Coefficients Filter Coefficient Precalculation
  * Use these to define filter behaviour when passing filters to
- * @ref iir_apply_filter(). @p sample_time should be the reciprocal of the
- * desired sample rate. @{
+ * @ref iir_apply_filter(). @{
  */
-void iir_coeffs_low_pass6(IIRFilter[IIR_POLES(1)], double sample_time, double freq) IIR_NONNULL_ARGS();
-void iir_coeffs_high_pass6(IIRFilter[IIR_POLES(1)], double sample_time, double freq) IIR_NONNULL_ARGS();
-void iir_coeffs_low_pass12(IIRFilter[IIR_POLES(2)], double sample_time, double freq, double q) IIR_NONNULL_ARGS();
-void iir_coeffs_high_pass12(IIRFilter[IIR_POLES(2)], double sample_time, double freq, double q) IIR_NONNULL_ARGS();
-void iir_coeffs_band_pass12(IIRFilter[IIR_POLES(2)], double sample_time, double freq, double q) IIR_NONNULL_ARGS();
-void iir_coeffs_band_stop12(IIRFilter[IIR_POLES(2)], double sample_time, double freq, double q) IIR_NONNULL_ARGS();
-void iir_coeffs_butterworth_low_pass12(IIRFilter[IIR_POLES(2)], double sample_time, double freq) IIR_NONNULL_ARGS();  /**< Maximally flat pass-band. */
-void iir_coeffs_butterworth_high_pass12(IIRFilter[IIR_POLES(2)], double sample_time, double freq) IIR_NONNULL_ARGS(); /**< Maximally flat pass-band. */
-void iir_coeffs_all_pass6(IIRFilter[IIR_POLES(1)], double sample_time, double freq) IIR_NONNULL_ARGS();
-void iir_coeffs_all_pass12(IIRFilter[IIR_POLES(2)], double sample_time, double freq, double q) IIR_NONNULL_ARGS();
-void iir_coeffs_low_shelving(IIRFilter[IIR_POLES(1)], double sample_time, double freq, double gain) IIR_NONNULL_ARGS();
-void iir_coeffs_high_shelving(IIRFilter[IIR_POLES(1)], double sample_time, double freq, double gain) IIR_NONNULL_ARGS();
-void iir_coeffs_peak(IIRFilter[IIR_POLES(2)], double sample_time, double freq, double q, double gain) IIR_NONNULL_ARGS();
-void iir_coeffs_peak_const_q(IIRFilter[IIR_POLES(2)], double sample_time, double freq, double q, double gain) IIR_NONNULL_ARGS();
-void iir_coeffs_linkwitz_riley_low_pass12(IIRFilter[IIR_POLES(2)], double sample_time, double freq) IIR_NONNULL_ARGS();  /**< -6 dB cutoff point. Useful for cross-overs. */
-void iir_coeffs_linkwitz_riley_high_pass12(IIRFilter[IIR_POLES(2)], double sample_time, double freq) IIR_NONNULL_ARGS(); /**< -6 dB cutoff point. Useful for cross-overs. */
+void iir_coeffs_low_pass6(IIRFilter[IIR_POLES(1)], double freq) IIR_NONNULL_ARGS();
+void iir_coeffs_high_pass6(IIRFilter[IIR_POLES(1)], double freq) IIR_NONNULL_ARGS();
+void iir_coeffs_low_pass12(IIRFilter[IIR_POLES(2)], double freq, double q) IIR_NONNULL_ARGS();
+void iir_coeffs_high_pass12(IIRFilter[IIR_POLES(2)], double freq, double q) IIR_NONNULL_ARGS();
+void iir_coeffs_band_pass12(IIRFilter[IIR_POLES(2)], double freq, double q) IIR_NONNULL_ARGS();
+void iir_coeffs_band_stop12(IIRFilter[IIR_POLES(2)], double freq, double q) IIR_NONNULL_ARGS();
+void iir_coeffs_butterworth_low_pass12(IIRFilter[IIR_POLES(2)], double freq) IIR_NONNULL_ARGS();  /**< Maximally flat pass-band. */
+void iir_coeffs_butterworth_high_pass12(IIRFilter[IIR_POLES(2)], double freq) IIR_NONNULL_ARGS(); /**< Maximally flat pass-band. */
+void iir_coeffs_all_pass6(IIRFilter[IIR_POLES(1)], double freq) IIR_NONNULL_ARGS();
+void iir_coeffs_all_pass12(IIRFilter[IIR_POLES(2)], double freq, double q) IIR_NONNULL_ARGS();
+void iir_coeffs_low_shelving(IIRFilter[IIR_POLES(1)], double freq, double gain) IIR_NONNULL_ARGS();
+void iir_coeffs_high_shelving(IIRFilter[IIR_POLES(1)], double freq, double gain) IIR_NONNULL_ARGS();
+void iir_coeffs_peak(IIRFilter[IIR_POLES(2)], double freq, double q, double gain) IIR_NONNULL_ARGS();
+void iir_coeffs_peak_const_q(IIRFilter[IIR_POLES(2)], double freq, double q, double gain) IIR_NONNULL_ARGS();
+void iir_coeffs_linkwitz_riley_low_pass12(IIRFilter[IIR_POLES(2)], double freq) IIR_NONNULL_ARGS();  /**< -6 dB cutoff point. Useful for cross-overs. */
+void iir_coeffs_linkwitz_riley_high_pass12(IIRFilter[IIR_POLES(2)], double freq) IIR_NONNULL_ARGS(); /**< -6 dB cutoff point. Useful for cross-overs. */
 
 void iir_coeffs_fast_low_pass6(IIRFilter[IIR_POLES(1)], double normalized_freq) IIR_NONNULL_ARGS();
 void iir_coeffs_fast_high_pass6(IIRFilter[IIR_POLES(1)], double normalized_freq) IIR_NONNULL_ARGS();
 void iir_coeffs_fast_low_pass12(IIRFilter[IIR_POLES(2)], double normalized_freq, double damping) IIR_NONNULL_ARGS();
 void iir_coeffs_fast_high_pass12(IIRFilter[IIR_POLES(2)], double normalized_freq, double damping) IIR_NONNULL_ARGS();
 
-void iir_coeffs_chebyshev_low_pass(IIRFilter[], size_t poles, double sample_time, double freq, double ripple) IIR_NONNULL_ARGS();
-void iir_coeffs_chebyshev_high_pass(IIRFilter[], size_t poles, double sample_time, double freq, double ripple) IIR_NONNULL_ARGS();
+void iir_coeffs_chebyshev_low_pass(IIRFilter[], size_t poles, double freq, double ripple) IIR_NONNULL_ARGS();
+void iir_coeffs_chebyshev_high_pass(IIRFilter[], size_t poles, double freq, double ripple) IIR_NONNULL_ARGS();
 /** @} */
 
 

@@ -197,8 +197,7 @@ static IIRFilter filter[2/* stereo */][IIR_POLES(MAX_POLES)];
 
 DSP_EXPORT bool initialize(void)
 {
-    iir_set_sample_rate(sampleRate);
-    printf("Hello DSP!");
+    iir_sample_rate = sampleRate;
     return true;
 }
 

@@ -13,7 +13,7 @@ all: release
 release: build/pnstest.x64
 build/pnstest.x64: $(SRCS) include/dsp/iir.h
 	mkdir -p build
-	$(CC) -o $@ $(SRCS) $(CFLAGS) -O3 -s -shared -Wl,--subsystem,windows
+	$(CC) -o $@ $(SRCS) $(CFLAGS) -O3 -flto -s -shared -Wl,--subsystem,windows
 
 perf: CFLAGS += -DPERFORMANCE_TEST
 perf: build/pnstest.x64

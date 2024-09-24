@@ -26,7 +26,7 @@ extern "C" {
 
 
 /** Filter state array sizes. */
-#define IIR_POLES(N) ((N/*previous samples*/) + 1/*current sample*/)
+#define IIR_POLES(N) ((N/* previous samples */) + 1/* current sample */)
 
 /** Filter state and coefficients.
  * This should always be used as an array large enough to hold the state and
@@ -60,13 +60,15 @@ typedef struct iir_nonlinearities
 /** Global Sample Rate
  * Most filters use global sample rate with the assumption of them only being
  * called from the real-time audio thread. If filters are used in multiple
- * threads, or smaple rate changes due to oversampling, or multiple sample rates
+ * threads, or sample rate changes due to oversampling, or multiple sample rates
  * are used for any other reason, use normalized frequencies from 0.0 to 1.0.
  * Normalized frequency can be calculated with `2.0*frequency/sample_rate`.
  */
 extern double iir_sample_rate;
 
-/** Sets filter state to 0. */
+/** Sets filter state to 0.
+ * Only sets sample memory. Coefficients remain untouched.
+ */
 void iir_filter_reset(IIRFilter[], size_t poles) IIR_NONNULL_ARGS();
 
 /** @defgroup BasicFilters Basic Precise Linear Filters
@@ -104,8 +106,8 @@ double iir_fast_high_pass12(IIRFilter[IIR_POLES(2)], double input, double normal
 /** @} */
 
 /** @defgroup Chebyshevs Chebyshev Linear Filters
- * Chebyshev filtering with even number of @p poles from 2 to 28. @p filter
- * obviously has to be of size `IIR_POLES(@p poles)`.
+ * Chebyshev filtering with number of @p poles from 2 to 28. @p filter obviously
+ * has to be at least of size `IIR_POLES(@p poles)`.
  *     The filters get more unstable close to 0 Hz and Nyquist with increased
  * poles. It is the responsability of the user to limit @p freq to a stable
  * range. @p freq can be in Hz or from 0.0 to 1.0.
@@ -121,10 +123,10 @@ double iir_chebyshev_high_pass(IIRFilter[], size_t poles, double input, double f
 // Generic Filtering
 
 /** Filter with precalculated coefficients and optional nonlinearities.
- * @p filter obviously has to be of size `IIR_POLES(@p poles)`. Same with
- * non-linearities if passed, `NULL` for linear filtering. @p filter must have
- * it's coefficients precalculated. Use a function from @ref Coefficients to
- * calculate coefficients before calling this function.
+ * @p filter obviously has to be at least of size `IIR_POLES(@p poles)`. Same
+ * with non-linearities if passed, `NULL` for linear filtering. @p filter must
+ * have it's coefficients precalculated. Use a function from @ref Coefficients
+ * to calculate coefficients before calling this function.
  *     This library calculates filter output with the recursion equation in form
  * `y0 = a0*x0 + a1*x1 + ... + an*xn + b1*y1 + b2*y2 + ... + bn*yn` as opposed
  * to the difference equation in form of

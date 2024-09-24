@@ -31,6 +31,7 @@ DSP_EXPORT uint           audioInputsCount=0;
 #define PNS_PRINTF_CHECK_ARGS
 #endif
 
+IIR_NONNULL_ARGS()
 void pns_vprintf(const char* fmt, va_list args)
 {
     char buf[256]; // Avoid heap usage
@@ -39,7 +40,7 @@ void pns_vprintf(const char* fmt, va_list args)
         print("pns_printf(): output or encoding error.");
         return;
     } else if ((size_t)length > sizeof buf - sizeof"") {
-        // This information is not crucial, so it will be only shown if logs are opened.
+        // This information is not crucial, it will be shown if logs are opened.
         print("pns_vprintf(): exceeded max line length.");
 
         // Give a hint that truncation happened.
@@ -48,7 +49,7 @@ void pns_vprintf(const char* fmt, va_list args)
     print(buf);
 }
 
-PNS_PRINTF_CHECK_ARGS
+PNS_PRINTF_CHECK_ARGS IIR_NONNULL_ARGS(1)
 void pns_printf(const char* fmt, ...)
 {
     va_list args;
@@ -119,13 +120,13 @@ typedef enum parameter
 
 double params[PARAMS_LENGTH];
 const char* params_names[PARAMS_LENGTH] = {
-    [PARAM_EFFECT] = "effect",
-    [PARAM_FREQ]   = "freq",
-    [PARAM_Q]      = "q",
-    [PARAM_POLES]  = "poles",
-    [PARAM_RIPPLE] = "ripple",
-    [PARAM_VOL]    = "volume",
-    [PARAM_GAIN]   = "gain",
+    [PARAM_EFFECT] = "Effect",
+    [PARAM_FREQ]   = "Frequency",
+    [PARAM_Q]      = "Q",
+    [PARAM_POLES]  = "Poles",
+    [PARAM_RIPPLE] = "Ripple",
+    [PARAM_VOL]    = "Volume",
+    [PARAM_GAIN]   = "Gain",
 };
 double params_min[PARAMS_LENGTH] = {
     [PARAM_GAIN]   = -18.,
@@ -150,29 +151,32 @@ int params_steps[PARAMS_LENGTH] = {
     [PARAM_EFFECT] = EFFECTS_LENGTH,
     [PARAM_POLES]  = 16 - 2 + 1,
 };
+const char* params_formats[PARAMS_LENGTH] = {
+    [PARAM_POLES]  = ".0",
+};
 const char* params_enums[PARAMS_LENGTH] = { [PARAM_EFFECT] =
-    "Low pass 6;"
-    "High pass 6;"
-    "Low pass 12;"
-    "High pass 12;"
-    "Band pass 12;"
-    "Band stop 12;"
-    "Butterworth low pass 12;"
-    "Butterworth high pass 12;"
-    "All pass 6;"
-    "All pass 12;"
-    "Low shelving;"
-    "High shelving;"
+    "Low Pass 6;"
+    "High Pass 6;"
+    "Low Pass 12;"
+    "High Pass 12;"
+    "Band Pass 12;"
+    "Band Stop 12;"
+    "Butterworth LP12;"
+    "Butterworth HP12;"
+    "All Pass 6;"
+    "All Pass 12;"
+    "Low Shelving;"
+    "High Shelving;"
     "Peak;"
-    "Peak const q;"
-    "Linkwitz Riley low pass 12;"
-    "Linkwitz Riley high pass 12;"
-    "Fast low pass 6;"
-    "Fast high pass 6;"
-    "Fast low pass 12;"
-    "Fast high pass 12;"
-    "Chebyshev low pass;"
-    "Chebyshev high pass"
+    "Peak Const Q;"
+    "Linkwitz Riley LP12;"
+    "Linkwitz Riley HP12;"
+    "Fast Low Pass 6;"
+    "Fast High Pass 6;"
+    "Fast Low Pass 12;"
+    "Fast High Pass 12;"
+    "Chebyshev LP;"
+    "Chebyshev HP"
 };
 
 DSP_EXPORT struct CDoubleArray inputParameters      = { params,       PARAMS_LENGTH };
@@ -181,6 +185,7 @@ DSP_EXPORT struct CDoubleArray inputParametersMin   = { params_min,   PARAMS_LEN
 DSP_EXPORT struct CDoubleArray inputParametersMax   = { params_max,   PARAMS_LENGTH };
 DSP_EXPORT struct CStringArray inputParametersUnits = { params_units, PARAMS_LENGTH };
 DSP_EXPORT struct CIntArray    inputParametersSteps = { params_steps, PARAMS_LENGTH };
+DSP_EXPORT struct CStringArray inputParametersFormats = { params_formats, PARAMS_LENGTH };
 DSP_EXPORT struct CStringArray inputParametersEnums = { params_enums, PARAMS_LENGTH };
 
 static Effect effect  = 0;
@@ -193,10 +198,16 @@ static double volume  = 1.;
 static double gain    = 1.;
 static double gain_db = 0.;
 
-static IIRFilter filter[2/* stereo */][IIR_POLES(MAX_POLES)];
+#define MAX_AUDIO_INPUTS 2 // stereo
+
+static IIRFilter filter[MAX_AUDIO_INPUTS][IIR_POLES(MAX_POLES)];
 
 DSP_EXPORT bool initialize(void)
 {
+    if (audioInputsCount > MAX_AUDIO_INPUTS) {
+        print("Too many audio inputs!");
+        return false;
+    }
     iir_sample_rate = sampleRate;
     return true;
 }

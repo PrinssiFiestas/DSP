@@ -142,7 +142,10 @@ double iir_apply_filter(
 
 /** @defgroup Coefficients Filter Coefficient Precalculation
  * Use these to define filter behaviour when passing filters to
- * @ref iir_apply_filter(). @{
+ * @ref iir_apply_filter().
+ *     Peak, high shelving, and low shelving, but not peak const Q, require some
+ * additional parallel processing to get the desired effect. For those, use
+ * `input + (gain - 1.0)*iir_apply_filter(filter, poles, input, whatever)`. @{
  */
 void iir_coeffs_low_pass6(IIRFilter[IIR_POLES(1)], double freq) IIR_NONNULL_ARGS();
 void iir_coeffs_high_pass6(IIRFilter[IIR_POLES(1)], double freq) IIR_NONNULL_ARGS();

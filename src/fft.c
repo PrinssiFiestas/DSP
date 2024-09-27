@@ -4,7 +4,7 @@
 
 #include <dsp/iir.h>
 #include <stdbool.h>
-//#include <math.h>
+#include <math.h>
 
 #define FFT_E           2.7182818284590452354
 #define FFT_LOG2E       1.4426950408889634074
@@ -26,29 +26,48 @@ static void fft_bit_reversal_sort(double res[], double ims[], size_t length)
 {
     size_t j = length/2;
     for (size_t i = 1; i < length - 2; ++i) {
-        if (i >= j)
-            goto kdecl;
-        double tr = res[j];
-        double ti = res[j];
-        res[j] = res[i];
-        ims[j] = ims[i];
-        res[i] = tr;
-        ims[j] = ti;
-        kdecl:;
-        size_t k = length/2;
-        if_k_j:
-        if (k > j) {
-            j = j + k;
-            continue;
+        if (i < j) {
+            double tr = res[j];
+            double ti = res[j];
+            res[j] = res[i];
+            ims[j] = ims[i];
+            res[i] = tr;
+            ims[j] = ti;
         }
-        j -= k;
-        k /= 2;
-        goto if_k_j;
+        size_t k = length/2;
+        while (k <= j) {
+            j -= k;
+            k /= 2;
+        }
+        j += k;
     }
 }
 
 void fft_complex(double res[], double ims[], size_t length)
 {
-    //size_t decompositions = FFT_LOG2E*log(length);
+    size_t stages = FFT_LOG2E*log(length);
     fft_bit_reversal_sort(res, ims, length);
+
+    for (size_t l = 1; l <= stages; ++l) {
+        size_t le  = 1 << l;
+        size_t le2 = le/2;
+        double ur  = 1.;
+        double ui  = 0.;
+        double sr  =  cos(FFT_PI/le2);
+        double si  = -sin(FFT_PI/le2);
+        for (size_t j = 0; j < le2; ++j) { // Calculate sub DFT's
+            for (size_t i = j; i < length; i += le) { // Calculate butterflys
+                size_t ip = i + le2;
+                double tr = res[ip]*ur - ims[ip]*ui;
+                double ti = res[ip]*ui + ims[ip]*ur;
+                res[ip] = res[i] - tr;
+                ims[ip] = ims[i] - ti;
+                res[i] += tr;
+                ims[i] += ti;
+            }
+            double tr = ur;
+            ur = tr*sr - ui*si;
+            ui = tr*si + ui*sr;
+        }
+    }
 }

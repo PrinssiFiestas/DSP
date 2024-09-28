@@ -28,11 +28,11 @@ static void fft_bit_reversal_sort(double res[], double ims[], size_t length)
     for (size_t i = 1; i < length - 2; ++i) {
         if (i < j) {
             double tr = res[j];
-            double ti = res[j];
+            double ti = ims[j];
             res[j] = res[i];
             ims[j] = ims[i];
             res[i] = tr;
-            ims[j] = ti;
+            ims[i] = ti;
         }
         size_t k = length/2;
         while (k <= j) {

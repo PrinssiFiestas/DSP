@@ -28,5 +28,8 @@ build/tests.exe: $(SRCS) tests/tests.c include/dsp/fft.h
 	mkdir -p build
 	$(CC) -o $@ tests/tests.c $(CFLAGS) -lgpc -lm -lpthread -ggdb3 -gdwarf
 
+tests:
+	./build/tests.exe
+
 clean:
 	rm -rf build

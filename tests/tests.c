@@ -32,10 +32,43 @@ static void dft(double dft_re[], double dft_im[], const double xs[], size_t n)
 //     }
 // }
 
+void moving_average(double ys[], const double xs[], size_t length, size_t window_size)
+{
+    // Extrapolate beginning
+    for (int i = 0; i < (int)window_size/2; ++i) {
+        double sum = 0.;
+        for (int j = i - (int)window_size/2; j <= i + (int)window_size/2; ++j) {
+            if (j < 0)
+                sum += xs[0] + j*(xs[1] - xs[0]);
+            else
+                sum += xs[j];
+        }
+        ys[i] = sum/window_size;
+    }
+    // Calculate middle part
+    for (size_t i = window_size/2; i < length - window_size/2; ++i) {
+        double sum = 0.;
+        for (size_t j = i - window_size/2; j <= i + window_size/2; ++j)
+            sum += xs[j];
+        ys[i] = sum/window_size;
+    }
+    // Extrapolate end
+    for (int i = length - (int)window_size/2; i <= (int)length; ++i) {
+        double sum = 0.;
+        for (int j = i - (int)window_size/2; j <= i + (int)window_size/2; ++j) {
+            if (j < (int)length)
+                sum += xs[j];
+            else
+                sum += xs[length - 1] + (j - length)*(xs[length - 1] - xs[length - 2]);
+        }
+        ys[i] = sum/window_size;
+    }
+}
+
 void print_signal(double signal[], size_t length)
 {
     #define HEIGHT 15 // should be odd
-    #define WIDTH 80
+    #define WIDTH 100
 
     static double* interpolated = NULL;
 
@@ -81,14 +114,14 @@ void print_signal(double signal[], size_t length)
             size_t interval = (x + 1)*length/WIDTH - x*length/WIDTH;
             val /= interval;
         }
-        if (val > 1.)
+        if (val == 1.)
+            graphic[0][x] = '+';
+        else if (val > 1.)
             graphic[0][x] = '~';
         else if (val < -1.)
             graphic[HEIGHT - 1][x] = '~';
         else {
             size_t y = HEIGHT*(.5*val + .5);
-            if (y == 9) // val == 1.0
-                y = 8;
             graphic[HEIGHT - 1 - y][x] = '+';
         }
     }
@@ -105,12 +138,16 @@ void print_signal(double signal[], size_t length)
 
 int main(void)
 {
-    double xs[64];
+    double xs[100];
+    double ys[100];
     size_t xs_length = sizeof xs/sizeof xs[0];
     for (size_t i = 0; i < xs_length; ++i) {
-        xs[i] = sin(2*FFT_PI*i/xs_length);
+        //xs[i] = sin(2*FFT_PI*i/xs_length);
+        xs[i] = i < xs_length / 2 ? 1. : -1.;
     }
     print_signal(xs, xs_length);
+    moving_average(ys, xs, xs_length, 5);
+    print_signal(ys, xs_length);
     return 0;
 
     gp_suite("FFT"); {
